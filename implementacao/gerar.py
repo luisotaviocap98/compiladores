@@ -74,27 +74,47 @@ def montar(node):
 
 #TODO
 def func_se(node,bloco):
-    # if_block = bloco.append_basic_block(name="if")
-    # else_block = bloco.append_basic_block(name="else")
+    if_block = bloco.append_basic_block(name="iftrue_1")
+    else_block = bloco.append_basic_block(name="iffalse_1")
+    end_block = bloco.append_basic_block(name="ifend_1")
+    
+    hasElse = False
+    
+    if node.children[4].name == 'senão':
+        hasElse = True
+    
     if node.children[0].name == 'se':
         condicao = node.children[1]
-        resolveLogica(condicao,bloco)
-        # bloco.entry_builder.cbranch(xp[0], if_block, else_block)
-        # bloco.position_at_end(if_block)
+        # xp,_ = resolveLogica(condicao,bloco)
+        bloco.cbranch(resolveLogica(condicao,bloco)[0], if_block, else_block)
+        bloco.position_at_end(if_block)
 
     
     if node.children[2].name == 'então':
         entao = node.children[3]
         for i in entao.children:
             map_func_especial.get(i.name)(i,bloco)
-        # bloco.branch(else_block)
+        bloco.branch(end_block)
+        # if hasElse:
+            # bloco.branch(else_block)
+        # else:
+
            
-    if node.children[4].name == 'senão':
+    if hasElse:
+        fim = node.children[6].name
+        bloco.position_at_end(else_block)
         senao = node.children[5]
         for i in senao.children:
             map_func_especial.get(i.name)(i,bloco)
-        # bloco.position_at_end(else_block)
-        # bloco.branch(else_block)
+        bloco.branch(end_block)
+        
+    else:
+        fim = node.children[4].name
+        bloco.branch(end_block)
+        
+    if fim == 'fim':
+        bloco.position_at_end(end_block)
+        
         
 
 def resolveLogica(node,bloco):
@@ -674,16 +694,18 @@ def buildFuncao(node,nome,tipo_retorno):
                     func.args[i].name = list_func_args_name[i]
             
             entryBlock = func.append_basic_block('entry')
-            exitBasicBlock = func.append_basic_block('exit')
             builder = ir.IRBuilder(entryBlock)
                 
             list_func_declarada.update({nome:[func,tipo_retorno,list_func_params,list_func_args_name]})
             
             for k in j.children:
+                if k.name == 'retorna':
+                    exitBasicBlock = func.append_basic_block('exit')
+                    builder.branch(exitBasicBlock)
+                    builder.position_at_end(exitBasicBlock)
+                    
                 map_func_especial.get(k.name)(k,builder)
             
-            builder.branch(exitBasicBlock)
-            builder.position_at_end(exitBasicBlock)
             
             if retorno_func != None:
                 builder.ret(retorno_func)

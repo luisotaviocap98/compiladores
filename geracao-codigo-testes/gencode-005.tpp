@@ -15,5 +15,5 @@ inteiro principal()
 
 	escreva(c)
 
-    retorna(0)
+  retorna(0)
 fim
